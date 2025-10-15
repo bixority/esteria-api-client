@@ -1,0 +1,21 @@
+[package]
+name = "esteria-api-client"
+version = "0.0.1"
+edition = "2024"
+
+[lib]
+name = "esteria_api_client"
+crate-type = ["cdylib"]  # Important: needed for Python FFI
+
+[dependencies]
+futures = "0.3.31"
+mimalloc = { version = "0.1.48", features = ["extended"] }
+pyo3 = { version = "0.26.0", features = ["extension-module"] }
+tokio = { version = "1.47.1", features = ["rt", "rt-multi-thread", "macros"] }
+
+[profile.release]
+opt-level = "z"
+debug = false
+strip = true
+lto = true
+codegen-units = 1
