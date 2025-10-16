@@ -3,12 +3,12 @@ use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use chrono::{DateTime};
 use std::sync::Arc;
 
-use crate::esteria::{SmsClient as RustSmsClient, SmsRequest, SmsFlags, Encoding, SmsError};
+use crate::esteria::{SmsClient, SmsRequest, SmsFlags, Encoding, SmsError};
 
 #[pyclass]
 #[derive(Clone)]
 pub struct PySmsClient {
-    inner: Arc<RustSmsClient>,
+    inner: Arc<SmsClient>,
 }
 
 #[pymethods]
@@ -16,7 +16,7 @@ impl PySmsClient {
     #[new]
     fn new(api_base_url: String) -> Self {
         Self {
-            inner: Arc::new(RustSmsClient::new(api_base_url)),
+            inner: Arc::new(SmsClient::new(api_base_url)),
         }
     }
 
