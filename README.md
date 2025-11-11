@@ -1,135 +1,250 @@
-# Object Storage Maintenance Tool
+# Esteria API Client
 
-## Overview
+A Rust-based client library for sending SMS messages via the Esteria API (https://esteria.eu). This project provides:
 
-The **Object Storage Maintenance Tool** is a command-line utility designed to **archive and compress objects** stored in
-object storage in a **streaming** manner. It helps manage storage efficiently by gathering objects older than a
-particular date and storing them in a single **TAR** archive, optionally compressing them with **XZ**.
+- A core Rust library for programmatic SMS sending.
+- A command-line interface (CLI) for quick SMS dispatch.
+- Python bindings for easy integration into Python applications.
 
-### Why Use This Tool?
-
-In object storage environments, a large number of small objects (e.g., audit logs, event records) can lead to
-inefficient storage use. For example:
-
-- Many objects are **tiny (100 bytes or even 0 bytes)** but still occupy **4KB** due to storage overhead.
-- Storing such objects as a **TAR archive** reduces storage overhead.
-- Compressing the archive with **XZ** further optimizes storage usage.
+The client supports advanced features like scheduled sending, delivery reports, flash SMS, test mode, and custom encodings.
 
 ## Features
 
-- **Archive Objects**: Consolidates multiple objects into a single **TAR** file.
-- **Streaming Compression**: Uses **XZ** to reduce storage footprint.
-- **Efficient Storage Management**: Helps save costs by reducing wasted space.
-- **S3-Compatible**: Works with AWS S3 compatible object storages.
+- **Authentication**: Secure API key-based access.
+- **SMS Options**:
+  - Scheduled delivery.
+  - Delivery report (DLR) callbacks.
+  - Expiration timeouts.
+  - Flags for debug, no-log, flash, test, no-blacklist, and character conversion.
+- **Encodings**: Default, 8-bit, or UDH (User Data Header).
+- **Error Handling**: Detailed error codes and messages from the API.
+- **Cross-Platform**: Works on Linux, macOS, and Windows.
+- **Python Integration**: Seamless Python API via PyO3 bindings.
+- **CLI Tool**: Simple command-line usage with environment variable support.
 
 ## Installation
 
-### Prerequisites
+### For Python Users (via PyPI)
 
-- Rust (latest stable version)
-- `cargo` package manager
+Install the Python package directly:
 
-### Build
-
-```shell
-make build
+```bash
+pip install esteria-api-client
 ```
 
-or
+This installs the Python bindings, which include the underlying Rust library.
 
-```shell
-cargo build --release
+### For Rust Users (via crates.io)
+
+Add the library to your `Cargo.toml`:
+
+```toml
+[dependencies]
+esteria-api-client = "0.1.0"  # Replace with the latest version
 ```
 
-### Build and compress the binary with UPX
+To install the CLI globally:
 
-```shell
-make release
+```bash
+cargo install esteria-api-client --features cli
 ```
 
-The binary will be located at `target/release/object-storage-maintenance`.
+Note: The `cli` feature enables the command-line tool, and `python` enables Python bindings (used for building wheels).
+
+### Building from Source
+
+Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/esteria-api-client.git
+cd esteria-api-client
+```
+
+Build the Rust library and CLI:
+
+```bash
+cargo build --features cli
+```
+
+For Python bindings, ensure you have `maturin` installed (for building wheels):
+
+```bash
+pip install maturin
+maturin develop  # Builds and installs locally for development
+```
+
+To build a PyPI wheel:
+
+```bash
+maturin build --release
+```
 
 ## Usage
 
-Set the environment variables for S3 client:
+### Environment Variables
 
-```dotenv
-AWS_REGION="eu-north-1"
-AWS_ACCESS_KEY=
-AWS_SECRET_KEY=
+The client supports these env vars for convenience:
+
+- `ESTERIA_API_BASE_URL`: API endpoint (default: `https://api.esteria.eu`).
+- `ESTERIA_API_KEY`: Your API key.
+
+### CLI Usage
+
+The CLI tool (`esteria-api-client`) allows sending SMS from the terminal.
+
+Basic example:
+
+```bash
+esteria-api-client \
+  --api-url https://api.esteria.eu \
+  --api-key YOUR_API_KEY \
+  --sender "MySender" \
+  --number "+1234567890" \
+  --text "Hello, world!"
 ```
 
-Note: `AWS_REGION` defaults to `us-east-1`.
+Full options:
 
-Set the object storage endpoint if you are using a non-standard S3 storage location:
-
-```dotenv
-OBJECT_STORAGE_ENDPOINT="https://my-storage.company.com:9000"
+```bash
+esteria-api-client --help
 ```
 
-Run the tool with the `archive` command to move and compress objects:
+Output:
 
-```shell
-object-storage-maintenance archive \
-    --src s3://project/audit/ \
-    --dst s3://archive/audit/ \
-    --cutoff 2025-01-01T00:00:00+00:00 \
-    --buffer 104857600 \
-    --compression best
+```
+Send SMS via Esteria API
+
+Usage: esteria-api-client [OPTIONS] --api-url <API_URL> --api-key <API_KEY> --sender <SENDER> --number <NUMBER> --text <TEXT>
+
+Options:
+  -u, --api-url <API_URL>      API base URL (e.g., https://api.esteria.eu)
+  -k, --api-key <API_KEY>      API key for authentication
+  -s, --sender <SENDER>        Sender name or number
+  -n, --number <NUMBER>        Recipient phone number (with or without +)
+  -t, --text <TEXT>            Message text to send
+      --time <TIME>            Schedule time (RFC3339 format, e.g., 2024-12-31T23:59:59Z)
+      --dlr-url <DLR_URL>      Delivery report URL
+      --expired <EXPIRED>      Expiration time in minutes
+      --user-key <USER_KEY>    User key for tracking
+      --debug                  Enable debug mode
+      --nolog                  Disable logging
+      --flash                  Send as flash SMS
+      --test                   Test mode (don't actually send)
+      --nobl                   No blacklist check
+      --convert                Convert characters
+      --encoding <ENCODING>    Encoding: default, 8bit, or udh [default: 8bit]
+  -h, --help                   Print help
+  -V, --version                Print version
 ```
 
-### Command-line Arguments
+On success, it prints the message ID (e.g., `Message ID: 12345`).
 
-| Argument        | Description                                                     | Required |
-|-----------------|-----------------------------------------------------------------|----------|
-| `--src`         | Source bucket and prefix containing the objects to archive.     | &#x2611; |
-| `--dst`         | Destination bucket and prefix where the archive will be stored. | &#x2611; |
-| `--cutoff`      | Cutoff timestamp in ISO format.                                 |          |
-| `--buffer`      | Buffer size in bytes (default: 104857600 = 100MB)               |          |
-| `--compression` | Compression level "fastest" or "best" (default: fastest)        |          |
+### Python Usage
 
-### Note
+Import and use the `SmsClient` class:
 
-- Keep in mind that AWS S3 multipart upload allows up to 10,000 parts. Since maximum total object size is 5TB - make
-  sure your part (buffer) size multiplied by 10,000 fits into 5TB. Buffer size is being defaulted to 100MB since it's a
-  best practice to use multipart upload for objects that are 100 MB or larger instead of uploading them in a single
-  operation.
-- If cutoff is not being passed - all the objects will be archived.
-- Best compression level is memory hungry (up to ~1GB), but it does its job pretty well.
+```python
+import asyncio
+from esteria_api_client import SmsClient, SmsFlags, PyEncoding
 
-### Run in a container
+async def main():
+    client = SmsClient("https://api.esteria.eu")
 
-```shell
-docker run --rm --env-file .env ghcr.io/bixority/object-storage-maintenance:v0.0.2 \
-    archive \
-    --src s3://project/audit/ \
-    --dst s3://archive/audit/ \
-    --cutoff 2025-01-01T00:00:00+00:00 \
-    --buffer 104857600 \
-    --compression best
+    # Basic send
+    result = await client.send_sms(
+        api_key="YOUR_API_KEY",
+        sender="MySender",
+        number="+1234567890",
+        text="Hello from Python!"
+    )
+    print(result)  # Message ID on success
+
+    # With options
+    flags = SmsFlags.debug() | SmsFlags.flash()
+    result = await client.send_sms(
+        api_key="YOUR_API_KEY",
+        sender="MySender",
+        number="+1234567890",
+        text="Scheduled flash SMS",
+        time=1735689599,  # Unix timestamp
+        dlr_url="https://your-callback-url.com",
+        expired=60,  # Expires in 60 minutes
+        flag_debug=True,
+        flag_flash=True,
+        user_key="my-tracking-key",
+        use_8bit=False,  # Use default encoding
+        udh=True  # UDH encoding
+    )
+    print(result)
+
+# Run the async function
+asyncio.run(main())
 ```
 
-There is intentionally no `:latest` tag so there are no surprises after seamless upgrade.
+- `SmsFlags`: Bitflags for options (e.g., `SmsFlags.debug()`, `SmsFlags.flash()`). Combine with `|`.
+- `PyEncoding`: Constants like `PyEncoding.DEFAULT`, `PyEncoding.EIGHT_BIT`, `PyEncoding.UDH`.
+- Errors: Raises `RuntimeError` on failure with details.
 
-## Example Use Case
+Note: The `time` parameter is a Unix timestamp (seconds since epoch).
 
-Imagine you have **millions of tiny log files** stored in `s3://project/audit/`:
+### Rust Usage (Library)
 
-- Each object is **100 bytes** but takes **4KB**.
-- You can **archive them into a single TAR file**.
-- **Compress the archive with XZ** to save additional space.
+Use the `SmsClient` and `SmsRequest` structs:
 
-After running the tool, the **tar.xz archive** is stored in `s3://archive/audit/`, significantly reducing storage
-costs.
+```rust
+use esteria_api_client::{SmsClient, SmsRequest, SmsFlags, Encoding};
+use chrono::Utc;
 
-## License
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = SmsClient::new("https://api.esteria.eu".to_string());
 
-GPL-3.0 License. See `LICENSE` for details.
+    let request = SmsRequest::new(
+        "YOUR_API_KEY",
+        "MySender",
+        "+1234567890",
+        "Hello from Rust!"
+    )
+    .with_flags(SmsFlags::DEBUG | SmsFlags::FLASH)
+    .with_encoding(Encoding::Udh)
+    .with_time(Utc::now())  // Schedule for now (or future)
+    .with_dlr_url("https://your-callback-url.com")
+    .with_expired(60)
+    .with_user_key("my-tracking-key");
 
-## Contributing
+    match client.send_sms(request).await {
+        Ok(code) => println!("Message ID: {}", code),
+        Err(e) => eprintln!("Error: {}", e),
+    }
 
-Feel free to submit issues and pull requests!
+    Ok(())
+}
+```
 
-## Author
+- `SmsFlags`: Bitflags (e.g., `SmsFlags::DEBUG`).
+- `Encoding`: Enum for `Default`, `EightBit`, `Udh`.
+- Errors: `SmsError` variants for handling.
 
-Maintained by Olegs Korsaks / Bixority SIA.
+## API Error Codes
+
+If sending fails, the client returns detailed errors based on Esteria's response codes:
+
+- 1: System internal error
+- 2: Missing parameter
+- 3: Unable to authenticate
+- ... (see full list in `esteria.rs`)
+
+## Developer Notes
+
+- **Features**: Enable `cli` for the command-line tool or `python` for bindings via Cargo.
+- **Dependencies**: Uses `reqwest` for HTTP, `chrono` for dates, `clap` for CLI, `pyo3` for Python, and `bitflags` for flags.
+- **Logging**: Uses `env_logger` (init in CLI).
+- **Testing**: Run `cargo test`. Use `--flag-test` for API test mode.
+- **Contributing**: Pull requests welcome! Focus on bug fixes, features, or docs.
+- **License**: GPLv3.
+
+For issues or suggestions, open a GitHub issue.
+
+---
+
+This project is not affiliated with Esteria.eu. Ensure you have an active Esteria account and API key.
