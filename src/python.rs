@@ -204,7 +204,7 @@ impl PySmsFlags {
 }
 
 #[pymodule]
-fn sms_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn esteria_api_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PySmsClient>()?;
     m.add_class::<PyEncoding>()?;
     m.add_class::<PySmsFlags>()?;

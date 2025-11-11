@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin>=1.0,<2.0"]
+requires = ["maturin"]
 build-backend = "maturin"
 
 [project]
@@ -29,4 +29,3 @@ Documentation = "https://github.com/bixority/esteria-api-client/blob/main/README
 [tool.maturin]
 features = ["python"]
 module-name = "esteria_api_client"
-python-source = "python"

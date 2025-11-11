@@ -3,12 +3,12 @@ use chrono::{DateTime, Utc};
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[command(name = "esteria-sms")]
+#[command(name = "esteria-api-client")]
 #[command(author, version, about = "Send SMS via Esteria API", long_about = None)]
 #[allow(clippy::struct_excessive_bools)]
 struct Cli {
-    /// API base URL (e.g., <https://api.esteria.lv>)
-    #[arg(short = 'u', long)]
+    /// API base URL (e.g., <https://api.esteria.eu>)
+    #[arg(short = 'u', long, env = "ESTERIA_API_BASE_URL")]
     api_url: String,
 
     /// API key for authentication
