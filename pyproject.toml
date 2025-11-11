@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "esteria-api-client"
-version = "0.1.1"
+dynamic = ["version"]
 description = "A Rust client library for Esteria API with Python bindings"
 authors = [
     { name = "Olegs Korsaks", email = "bixority@gmail.com" }
