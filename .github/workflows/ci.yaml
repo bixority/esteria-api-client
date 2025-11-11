@@ -99,4 +99,4 @@ jobs:
       - name: Publish to PyPI
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-        run: maturin upload --skip-existing dist/*.whl
+        run: find dist -name "*.whl" -exec maturin upload --skip-existing {} +
