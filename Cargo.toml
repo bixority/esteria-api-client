@@ -1,27 +1,33 @@
 [package]
 name = "esteria-api-client"
-version = "0.0.1"
+version = "0.1.1"
 edition = "2024"
+
+[dependencies]
+chrono = "0.4"
+reqwest = { version = "0.12", features = ["json"] }
+thiserror = "2.0.17"
+bitflags = "2.4"
+log = "0.4.28"
+env_logger = "0.11.8"
+tokio = { version = "1.48.0", features = ["full"] }
+
+clap = { version = "4.5.51", features = ["derive", "env"], optional = true }
+
+# Python bindings (optional)
+pyo3 = { version = "0.27.1", features = ["extension-module"], optional = true }
+pyo3-async-runtimes = { version = "0.27.0", features = ["tokio-runtime"], optional = true }
 
 [lib]
 name = "esteria_api_client"
-crate-type = ["cdylib"]  # Important: needed for Python FFI
+crate-type = ["rlib", "cdylib"]
 
-[dependencies]
-futures = "0.3.31"
-mimalloc = { version = "0.1.48", features = ["extended"] }
-pyo3 = { version = "0.27.1", features = ["extension-module"] }
-pyo3-async-runtimes = { version = "0.27.0", features = ["tokio-runtime"] }
-tokio = { version = "1.48.0", features = ["rt", "rt-multi-thread", "macros"] }
-chrono = "0.4.42"
-reqwest = "0.12.24"
-thiserror = "2.0.17"
-log = "0.4.28"
-bitflags = "2.10.0"
+[[bin]]
+name = "esteria-api-client"
+path = "src/main.rs"
+required-features = []
 
-[profile.release]
-opt-level = "z"
-debug = false
-strip = true
-lto = true
-codegen-units = 1
+[features]
+default = []
+python = ["pyo3", "pyo3-async-runtimes"]
+cli = ["clap"]

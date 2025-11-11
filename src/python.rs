@@ -1,9 +1,9 @@
-use pyo3::prelude::*;
+use crate::esteria::{Encoding, SmsClient, SmsError, SmsFlags, SmsRequest};
+use chrono::DateTime;
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
-use chrono::{DateTime};
-use std::sync::Arc;
+use pyo3::prelude::*;
 use pyo3_async_runtimes::tokio::future_into_py;
-use crate::esteria::{SmsClient, SmsRequest, SmsFlags, Encoding, SmsError};
+use std::sync::Arc;
 
 #[pyclass]
 #[derive(Clone)]
@@ -90,10 +90,12 @@ impl PySmsClient {
                 Encoding::Default
             };
 
-            let datetime = time.map(|timestamp| {
-                DateTime::from_timestamp(timestamp, 0)
-                    .ok_or_else(|| PyValueError::new_err("Invalid timestamp"))
-            }).transpose()?;
+            let datetime = time
+                .map(|timestamp| {
+                    DateTime::from_timestamp(timestamp, 0)
+                        .ok_or_else(|| PyValueError::new_err("Invalid timestamp"))
+                })
+                .transpose()?;
 
             let mut request = SmsRequest::new(&api_key, &sender, &number, &text)
                 .with_flags(flags)
@@ -115,27 +117,21 @@ impl PySmsClient {
                 request = request.with_user_key(key);
             }
 
-            client.send_sms(request)
-                .await
-                .map_err(|e| match e {
-                    SmsError::SendFailed { number, message } => {
-                        PyRuntimeError::new_err(format!(
-                            "SMS sending failed to: {number}, {message}"
-                        ))
-                    }
-                    SmsError::RequestFailed(e) => {
-                        PyRuntimeError::new_err(format!("HTTP request failed: {e}"))
-                    }
-                    SmsError::InvalidResponse => {
-                        PyRuntimeError::new_err("Invalid response format")
-                    }
-                })
+            client.send_sms(request).await.map_err(|e| match e {
+                SmsError::SendFailed { number, message } => {
+                    PyRuntimeError::new_err(format!("SMS sending failed to: {number}, {message}"))
+                }
+                SmsError::RequestFailed(e) => {
+                    PyRuntimeError::new_err(format!("HTTP request failed: {e}"))
+                }
+            })
         })
     }
 }
 
 #[pyclass]
 #[derive(Clone, Copy)]
+#[allow(dead_code)]
 pub struct PyEncoding(Encoding);
 
 #[pymethods]
@@ -191,14 +187,17 @@ impl PySmsFlags {
         Self(SmsFlags::CONVERT)
     }
 
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     fn __or__(&self, other: &Self) -> Self {
         Self(self.0 | other.0)
     }
 
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     fn __and__(&self, other: &Self) -> Self {
         Self(self.0 & other.0)
     }
 
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     fn __repr__(&self) -> String {
         format!("SmsFlags({:?})", self.0)
     }

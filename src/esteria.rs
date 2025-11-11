@@ -3,40 +3,52 @@ use reqwest::Client;
 use std::collections::HashMap;
 use thiserror::Error;
 
+/// Error types for SMS operations
 #[derive(Error, Debug)]
 pub enum SmsError {
     #[error("SMS sending failed to: {number}, {message}")]
     SendFailed { number: String, message: String },
     #[error("HTTP request failed: {0}")]
     RequestFailed(#[from] reqwest::Error),
-    #[error("Invalid response format")]
-    InvalidResponse,
 }
 
 bitflags::bitflags! {
+    /// Flags for SMS sending options
     #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
     pub struct SmsFlags: u32 {
+        /// Enable debug mode
         const DEBUG   = 0b0000_0001;
+        /// Disable logging
         const NOLOG   = 0b0000_0010;
+        /// Send as flash SMS
         const FLASH   = 0b0000_0100;
+        /// Test mode (don't actually send)
         const TEST    = 0b0000_1000;
+        /// No blacklist check
         const NOBL    = 0b0001_0000;
+        /// Convert characters
         const CONVERT = 0b0010_0000;
     }
 }
 
+/// SMS encoding options
 #[derive(Debug, Clone, Copy)]
 pub enum Encoding {
+    /// Default encoding
     Default,
+    /// 8-bit encoding
     EightBit,
+    /// User Data Header encoding
     Udh,
 }
 
+/// SMS API client for Esteria
 pub struct SmsClient {
     api_base_url: String,
     client: Client,
 }
 
+/// Request structure for sending SMS
 pub struct SmsRequest<'a> {
     pub api_key: &'a str,
     pub sender: &'a str,
@@ -51,12 +63,9 @@ pub struct SmsRequest<'a> {
 }
 
 impl<'a> SmsRequest<'a> {
-    pub fn new(
-        api_key: &'a str,
-        sender: &'a str,
-        number: &'a str,
-        text: &'a str,
-    ) -> Self {
+    /// Create a new SMS request with required parameters
+    #[must_use]
+    pub fn new(api_key: &'a str, sender: &'a str, number: &'a str, text: &'a str) -> Self {
         Self {
             api_key,
             sender,
@@ -71,31 +80,43 @@ impl<'a> SmsRequest<'a> {
         }
     }
 
+    /// Set scheduled delivery time
+    #[must_use]
     pub fn with_time(mut self, time: DateTime<Utc>) -> Self {
         self.time = Some(time);
         self
     }
 
+    /// Set delivery report URL
+    #[must_use]
     pub fn with_dlr_url(mut self, dlr_url: &'a str) -> Self {
         self.dlr_url = Some(dlr_url);
         self
     }
 
+    /// Set expiration time in minutes
+    #[must_use]
     pub fn with_expired(mut self, expired: i32) -> Self {
         self.expired = Some(expired);
         self
     }
 
+    /// Set SMS flags
+    #[must_use]
     pub fn with_flags(mut self, flags: SmsFlags) -> Self {
         self.flags = flags;
         self
     }
 
+    /// Set user key for tracking
+    #[must_use]
     pub fn with_user_key(mut self, user_key: &'a str) -> Self {
         self.user_key = Some(user_key);
         self
     }
 
+    /// Set encoding
+    #[must_use]
     pub fn with_encoding(mut self, encoding: Encoding) -> Self {
         self.encoding = encoding;
         self
@@ -103,6 +124,8 @@ impl<'a> SmsRequest<'a> {
 }
 
 impl SmsClient {
+    /// Create a new SMS client with the given API base URL
+    #[must_use]
     pub fn new(api_base_url: String) -> Self {
         Self {
             api_base_url,
@@ -110,6 +133,14 @@ impl SmsClient {
         }
     }
 
+    /// Send an SMS message
+    ///
+    /// Returns the message ID on success (> 100)
+    ///
+    /// # Errors
+    ///
+    /// Returns `SmsError::SendFailed` if the API returns an error code (< 100)
+    /// or `SmsError::RequestFailed` if the HTTP request fails
     pub async fn send_sms(&self, request: SmsRequest<'_>) -> Result<i32, SmsError> {
         let mut params: HashMap<&str, String> = HashMap::new();
 
