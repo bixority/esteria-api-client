@@ -253,3 +253,135 @@ fn get_response_code_message(code: i32) -> &'static str {
         _ => "unknown error",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::TimeZone;
+    use httpmock::prelude::*;
+
+    fn base_request<'a>() -> SmsRequest<'a> {
+        SmsRequest::new("k", "Alice", "+1234567890", "Hello")
+    }
+
+    #[tokio::test]
+    async fn send_sms_success_and_params() {
+        let server = MockServer::start();
+
+        // Build flags and encoding to verify query mapping
+        let mut flags = SmsFlags::empty();
+        flags |= SmsFlags::DEBUG
+            | SmsFlags::NOLOG
+            | SmsFlags::FLASH
+            | SmsFlags::TEST
+            | SmsFlags::NOBL
+            | SmsFlags::CONVERT;
+
+        let time = Utc.with_ymd_and_hms(2025, 1, 2, 3, 4, 5).unwrap();
+
+        let req = base_request()
+            .with_time(time)
+            .with_dlr_url("https://example.com/dlr")
+            .with_expired(60)
+            .with_flags(flags)
+            .with_user_key("ukey")
+            .with_encoding(Encoding::Udh);
+
+        // Expect all query params and return success code (>100)
+        let m = server.mock(|when, then| {
+            when.method(GET)
+                .path("/send")
+                .query_param("api-key", "k")
+                .query_param("sender", "Alice")
+                .query_param("number", "1234567890") // plus sign trimmed
+                .query_param("text", "Hello")
+                .query_param("time", "2025-01-02T03:04:05")
+                .query_param("dlr-url", "https://example.com/dlr")
+                .query_param("expired", "60")
+                .query_param("flag-debug", "1")
+                .query_param("flag-nolog", "3")
+                .query_param("flag-flash", "1")
+                .query_param("flag-test", "1")
+                .query_param("flag-nobl", "1")
+                .query_param("flag-convert", "1")
+                .query_param("user-key", "ukey")
+                .query_param("udh", "1")
+                .query_param("coding", "1");
+            then.status(200).body("1234");
+        });
+
+        let client = SmsClient::new(server.base_url());
+        let code = client.send_sms(req).await.unwrap();
+        assert_eq!(code, 1234);
+        m.assert();
+    }
+
+    #[tokio::test]
+    async fn send_sms_api_error_mapped() {
+        let server = MockServer::start();
+        let m = server.mock(|when, then| {
+            when.method(GET).path("/send");
+            then.status(200).body("3"); // 3 => unable to authenticate
+        });
+
+        let client = SmsClient::new(server.base_url());
+        let err = client.send_sms(base_request()).await.unwrap_err();
+        match err {
+            SmsError::SendFailed { number, message } => {
+                assert_eq!(number, "+1234567890");
+                assert_eq!(message, "unable to authenticate");
+            }
+            _ => panic!("unexpected error type"),
+        }
+        m.assert();
+    }
+
+    #[tokio::test]
+    async fn send_sms_unknown_text_maps_to_unknown_error() {
+        let server = MockServer::start();
+        let m = server.mock(|when, then| {
+            when.method(GET).path("/send");
+            then.status(200).body("not-a-number");
+        });
+
+        let client = SmsClient::new(server.base_url());
+        let err = client.send_sms(base_request()).await.unwrap_err();
+        match err {
+            SmsError::SendFailed { number, message } => {
+                assert_eq!(number, "+1234567890");
+                assert_eq!(message, "unknown error");
+            }
+            _ => panic!("unexpected error type"),
+        }
+        m.assert();
+    }
+
+    #[tokio::test]
+    async fn send_sms_http_failure_is_request_failed() {
+        // Use a non-routable private address to provoke connection error
+        let client = SmsClient::new("http://10.255.255.1".to_string());
+        let err = client.send_sms(base_request()).await.unwrap_err();
+        matches!(err, SmsError::RequestFailed(_));
+    }
+
+    #[test]
+    fn builder_sets_fields_and_defaults() {
+        let req = SmsRequest::new("key", "S", "N", "T");
+        assert!(req.time.is_none());
+        assert!(req.dlr_url.is_none());
+        assert!(req.expired.is_none());
+        assert!(req.user_key.is_none());
+        assert_eq!(req.flags, SmsFlags::empty());
+        matches!(req.encoding, Encoding::EightBit);
+    }
+
+    #[test]
+    fn get_response_code_message_works() {
+        assert_eq!(get_response_code_message(1), "system internal error");
+        assert_eq!(
+            get_response_code_message(19),
+            "invalid FLAG-CONVERT parameter"
+        );
+        assert_eq!(get_response_code_message(999), "unknown error");
+    }
+}

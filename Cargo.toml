@@ -33,3 +33,6 @@ required-features = ["cli"]
 default = []
 python = ["pyo3", "pyo3-async-runtimes"]
 cli = ["clap"]
+
+[dev-dependencies]
+httpmock = "0.8.2"
