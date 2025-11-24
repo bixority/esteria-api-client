@@ -85,6 +85,7 @@ jobs:
     needs: build-wheels
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v6
         with:
           path: dist
@@ -92,11 +93,18 @@ jobs:
       - name: Install Python + maturin
         uses: actions/setup-python@v6
         with:
-          python-version: "${{ matrix.python-version }}"
+          python-version: "3.14"
 
       - run: pip install maturin
+
+      - name: Build source distribution (sdist)
+        run: maturin sdist --out dist
 
       - name: Publish to PyPI
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-        run: find dist -name "*.whl" -exec maturin upload --skip-existing {} +
+        run: |
+          # Upload built wheels from matrix builds
+          find dist -name "*.whl" -exec maturin upload --skip-existing {} +
+          # Upload source distribution produced above
+          find dist -name "*.tar.gz" -exec maturin upload --skip-existing {} +
