@@ -356,7 +356,7 @@ dependencies = [
 
 [[package]]
 name = "esteria-api-client"
-version = "0.0.8"
+version = "0.0.9"
 dependencies = [
  "bitflags",
  "chrono",
