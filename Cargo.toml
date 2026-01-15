@@ -6,7 +6,7 @@ description = "A Rust-based client library for sending SMS messages via the Este
 license = "GPL-3.0-only"
 
 [dependencies]
-chrono = "0.4.42"
+chrono = "0.4.43"
 reqwest = { version = "0.12.26", features = ["json"] }
 thiserror = "2.0.17"
 bitflags = "2.10.0"
