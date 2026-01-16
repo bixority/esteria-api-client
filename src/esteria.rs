@@ -328,7 +328,7 @@ mod tests {
         let err = client.send_sms(base_request()).await.unwrap_err();
         match err {
             SmsError::SendFailed { number, message } => {
-                assert_eq!(number, "+12345678S90");
+                assert_eq!(number, "+1234567890");
                 assert_eq!(message, "unable to authenticate");
             }
             SmsError::RequestFailed(err) => panic!("Unexpected error type: {err}"),
