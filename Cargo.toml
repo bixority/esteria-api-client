@@ -16,7 +16,7 @@ tokio = { version = "1.49.0", features = ["full"] }
 
 clap = { version = "4.5.59", features = ["derive", "env"], optional = true }
 
-pyo3 = { version = "0.28.1", features = ["extension-module"], optional = true }
+pyo3 = { version = "0.28.2", features = ["extension-module"], optional = true }
 pyo3-async-runtimes = { version = "0.28.0", features = ["tokio-runtime"], optional = true }
 
 [lib]
