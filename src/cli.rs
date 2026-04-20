@@ -85,7 +85,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     let cli = Cli::parse();
 
-    let client = SmsClient::new(cli.api_url);
+    let client = SmsClient::with_api_base_url(cli.api_url);
 
     let mut flags = SmsFlags::empty();
     if cli.debug {

@@ -14,9 +14,10 @@ pub struct PySmsClient {
 #[pymethods]
 impl PySmsClient {
     #[new]
-    fn new(api_base_url: String) -> Self {
+    #[pyo3(signature = (api_base_url = "https://api.esteria.eu"))]
+    fn new(api_base_url: &str) -> Self {
         Self {
-            inner: Arc::new(SmsClient::new(api_base_url)),
+            inner: Arc::new(SmsClient::with_api_base_url(api_base_url)),
         }
     }
 

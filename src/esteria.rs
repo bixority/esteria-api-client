@@ -123,12 +123,25 @@ impl<'a> SmsRequest<'a> {
     }
 }
 
+impl Default for SmsClient {
+    fn default() -> Self {
+        Self::with_api_base_url("https://api.esteria.eu")
+    }
+}
+
 impl SmsClient {
-    /// Create a new SMS client with the given API base URL
+    /// Create a new SMS client using the default API base URL
+    #[allow(dead_code)]
     #[must_use]
-    pub fn new(api_base_url: String) -> Self {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Create a new SMS client with a custom API base URL
+    #[must_use]
+    pub fn with_api_base_url(api_base_url: impl Into<String>) -> Self {
         Self {
-            api_base_url,
+            api_base_url: api_base_url.into(),
             client: Client::new(),
         }
     }
@@ -310,7 +323,7 @@ mod tests {
             then.status(200).body("1234");
         });
 
-        let client = SmsClient::new(server.base_url());
+        let client = SmsClient::with_api_base_url(server.base_url());;
         let code = client.send_sms(req).await.unwrap();
         assert_eq!(code, 1234);
         m.assert();
@@ -324,7 +337,7 @@ mod tests {
             then.status(200).body("3"); // 3 => unable to authenticate
         });
 
-        let client = SmsClient::new(server.base_url());
+        let client = SmsClient::with_api_base_url(server.base_url());;
         let err = client.send_sms(base_request()).await.unwrap_err();
         match err {
             SmsError::SendFailed { number, message } => {
@@ -344,7 +357,7 @@ mod tests {
             then.status(200).body("not-a-number");
         });
 
-        let client = SmsClient::new(server.base_url());
+        let client = SmsClient::with_api_base_url(server.base_url());;
         let err = client.send_sms(base_request()).await.unwrap_err();
         match err {
             SmsError::SendFailed { number, message } => {
@@ -359,7 +372,7 @@ mod tests {
     #[tokio::test]
     async fn send_sms_http_failure_is_request_failed() {
         // Use a non-routable private address to provoke connection error
-        let client = SmsClient::new("http://10.255.255.1".to_string());
+        let client = SmsClient::with_api_base_url("http://10.255.255.1".to_string());
         let err = client.send_sms(base_request()).await.unwrap_err();
         matches!(err, SmsError::RequestFailed(_));
     }
