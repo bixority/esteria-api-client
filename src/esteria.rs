@@ -76,7 +76,7 @@ impl<'a> SmsRequest<'a> {
             expired: None,
             flags: SmsFlags::empty(),
             user_key: None,
-            encoding: Encoding::EightBit,
+            encoding: Encoding::Default,
         }
     }
 
