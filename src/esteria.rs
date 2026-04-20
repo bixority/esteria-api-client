@@ -154,7 +154,7 @@ impl SmsClient {
     ///
     /// Returns `SmsError::SendFailed` if the API returns an error code (< 100)
     /// or `SmsError::RequestFailed` if the HTTP request fails
-    pub async fn send_sms(&self, request: SmsRequest<'_>) -> Result<i32, SmsError> {
+    pub async fn send_sms(&self, request: SmsRequest<'_>) -> Result<String, SmsError> {
         let mut params: HashMap<&str, String> = HashMap::new();
 
         params.insert("api-key", request.api_key.to_string());
@@ -218,11 +218,11 @@ impl SmsClient {
 
         let resp_text = response.text().await?;
 
-        let result = resp_text.trim().parse::<i32>().ok();
+        let result = resp_text.trim().parse::<i128>().ok();
 
         if let Some(code) = result {
             if code > 100 {
-                return Ok(code);
+                return Ok(resp_text);
             }
 
             let error_msg = get_response_code_message(code);
@@ -242,7 +242,7 @@ impl SmsClient {
     }
 }
 
-fn get_response_code_message(code: i32) -> &'static str {
+fn get_response_code_message(code: i128) -> &'static str {
     match code {
         1 => "system internal error",
         2 => "missing PARAM_NAME parameter",
@@ -323,9 +323,9 @@ mod tests {
             then.status(200).body("1234");
         });
 
-        let client = SmsClient::with_api_base_url(server.base_url());;
+        let client = SmsClient::with_api_base_url(server.base_url());
         let code = client.send_sms(req).await.unwrap();
-        assert_eq!(code, 1234);
+        assert_eq!(code, "1234");
         m.assert();
     }
 
@@ -337,7 +337,7 @@ mod tests {
             then.status(200).body("3"); // 3 => unable to authenticate
         });
 
-        let client = SmsClient::with_api_base_url(server.base_url());;
+        let client = SmsClient::with_api_base_url(server.base_url());
         let err = client.send_sms(base_request()).await.unwrap_err();
         match err {
             SmsError::SendFailed { number, message } => {
@@ -357,7 +357,7 @@ mod tests {
             then.status(200).body("not-a-number");
         });
 
-        let client = SmsClient::with_api_base_url(server.base_url());;
+        let client = SmsClient::with_api_base_url(server.base_url());
         let err = client.send_sms(base_request()).await.unwrap_err();
         match err {
             SmsError::SendFailed { number, message } => {

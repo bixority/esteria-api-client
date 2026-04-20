@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 use pyo3_async_runtimes::tokio::future_into_py;
 use std::sync::Arc;
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone)]
 pub struct PySmsClient {
     inner: Arc<SmsClient>,
@@ -130,7 +130,7 @@ impl PySmsClient {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone, Copy)]
 #[allow(dead_code)]
 pub struct PyEncoding(Encoding);
@@ -147,7 +147,7 @@ impl PyEncoding {
     const UDH: Self = Self(Encoding::Udh);
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone, Copy)]
 pub struct PySmsFlags(SmsFlags);
 

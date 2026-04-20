@@ -68,7 +68,7 @@ struct Cli {
     convert: bool,
 
     /// Encoding: default, 8bit, or udh
-    #[arg(long, default_value = "8bit")]
+    #[arg(long, default_value = "default")]
     encoding: String,
 }
 
