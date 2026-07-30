@@ -6,18 +6,16 @@ description = "A Rust-based client library for sending SMS messages via the Este
 license = "GPL-3.0-only"
 
 [dependencies]
+bitflags = "2.13.1"
 chrono = "0.4.45"
-reqwest = { version = "0.13.4", features = ["json", "query"] }
-thiserror = "2.0.18"
-bitflags = "2.13.0"
-log = "0.4.32"
-env_logger = "0.11.10"
-tokio = { version = "1.52.3", features = ["full"] }
-
-clap = { version = "4.6.1", features = ["derive", "env"], optional = true }
-
+clap = { version = "4.6.4", features = ["derive", "env"], optional = true }
+env_logger = "0.11.11"
+log = "0.4.33"
 pyo3 = { version = "0.29.0", features = ["extension-module"], optional = true }
 pyo3-async-runtimes = { version = "0.29.0", features = ["tokio-runtime"], optional = true }
+reqwest = { version = "0.13.4", features = ["json", "query"] }
+thiserror = "2.0.19"
+tokio = { version = "1.53.1", features = ["full"] }
 
 [lib]
 name = "esteria_api_client"
