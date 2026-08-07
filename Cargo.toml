@@ -8,10 +8,10 @@ license = "GPL-3.0-only"
 [dependencies]
 bitflags = "2.13.1"
 chrono = "0.4.45"
-clap = { version = "4.6.5", features = ["derive", "env"], optional = true }
+clap = { version = "4.6.6", features = ["derive", "env"], optional = true }
 env_logger = "0.11.11"
 log = "0.4.33"
-pyo3 = { version = "0.29.0", features = ["extension-module"], optional = true }
+pyo3 = { version = "0.29.2", features = ["extension-module"], optional = true }
 pyo3-async-runtimes = { version = "0.29.0", features = ["tokio-runtime"], optional = true }
 reqwest = { version = "0.13.4", features = ["json", "query"] }
 thiserror = "2.0.19"
