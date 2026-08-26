@@ -1,6 +1,7 @@
 [package]
 name = "esteria-api-client"
 version = "0.0.22"
+rust-version = "1.98"
 edition = "2024"
 description = "A Rust-based client library for sending SMS messages via the Esteria API"
 license = "GPL-3.0-only"
@@ -10,7 +11,7 @@ bitflags = "2.13.1"
 chrono = "0.4.45"
 clap = { version = "4.6.6", features = ["derive", "env"], optional = true }
 env_logger = "0.11.11"
-log = "0.4.33"
+log = "0.4.34"
 pyo3 = { version = "0.29.2", features = ["extension-module"], optional = true }
 pyo3-async-runtimes = { version = "0.29.0", features = ["tokio-runtime"], optional = true }
 reqwest = { version = "0.13.4", features = ["json", "query"] }
